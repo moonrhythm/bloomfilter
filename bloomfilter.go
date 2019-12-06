@@ -24,17 +24,6 @@ type Filter struct {
 	n    uint64 // number of inserted elements
 }
 
-// Hashable -> hashes
-func (f *Filter) hash(v hash.Hash64) []uint64 {
-	rawHash := v.Sum64()
-	n := len(f.keys)
-	hashes := make([]uint64, n)
-	for i := 0; i < n; i++ {
-		hashes[i] = rawHash ^ f.keys[i]
-	}
-	return hashes
-}
-
 // M is the size of Bloom filter, in bits
 func (f *Filter) M() uint64 {
 	return f.m
@@ -51,12 +40,11 @@ func (f *Filter) Add(v hash.Hash64) {
 	defer f.lock.Unlock()
 	var (
 		hash = v.Sum64()
-		n    = len(f.keys)
-		res  uint64
+		i    uint64
 	)
-	for i := 0; i < n; i++ {
-		res = (hash ^ f.keys[i]) % f.m
-		f.bits[res>>6] |= 1 << uint(res&0x3f)
+	for n := 0; n < len(f.keys); n++ {
+		i = (hash ^ f.keys[n]) % f.m
+		f.bits[i>>6] |= 1 << uint(i&0x3f)
 	}
 	f.n++
 }
@@ -67,12 +55,11 @@ func (f *Filter) AddHash(hash uint64) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 	var (
-		n   = len(f.keys)
-		res uint64
+		i uint64
 	)
-	for i := 0; i < n; i++ {
-		res = (hash ^ f.keys[i]) % f.m
-		f.bits[res>>6] |= 1 << uint(res&0x3f)
+	for n := 0; n < len(f.keys); n++ {
+		i = (hash ^ f.keys[n]) % f.m
+		f.bits[i>>6] |= 1 << uint(i&0x3f)
 	}
 	f.n++
 }
@@ -83,11 +70,13 @@ func (f *Filter) AddHash(hash uint64) {
 func (f *Filter) Contains(v hash.Hash64) bool {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-
-	r := uint64(1)
-	for _, i := range f.hash(v) {
-		// r |= f.getBit(k)
-		i %= f.m
+	var (
+		hash = v.Sum64()
+		i    uint64
+		r    = uint64(1)
+	)
+	for n := 0; n < len(f.keys); n++ {
+		i = (hash ^ f.keys[n]) % f.m
 		r &= (f.bits[i>>6] >> uint(i&0x3f)) & 1
 	}
 	return uint64ToBool(r)

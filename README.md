@@ -1,12 +1,24 @@
-**Important**: Zeroth, [consider](https://bdupras.github.io/filter-tutorial/) if a [Cuckoo filter](https://www.cs.cmu.edu/~dga/papers/cuckoo-conext2014.pdf) could be [right for your use-case](https://github.com/seiflotfy/cuckoofilter).
-
 
 [![GoDoc](https://godoc.org/github.com/steakknife/bloomfilter?status.png)](https://godoc.org/github.com/steakknife/bloomfilter) [![travis](https://img.shields.io/travis/steakknife/bloomfilter.svg)](https://travis-ci.org/steakknife/bloomfilter)
+
+# History
+
+This bloom filter implementation is a fork from [steakknife/bloomfilter](https://github.com/steakknife/bloomfilter) by Barry Allard. 
+The upstream project is now archived, so this fork exists to fix some bugs and also
+make a few improvements. Below is the original description. 
+
+All recent changes are copyright © 2019 Martin Holst Swende. 
+
+## Installation 
+
+```
+$ go get github.com/holiman/bloomfilter
+```
+
 
 # Face-meltingly fast, thread-safe, marshalable, unionable, probability- and optimal-size-calculating Bloom filter in go
 
 Copyright © 2014-2016,2018 Barry Allard
-
 [MIT license](MIT-LICENSE.txt)
 
 ## WTF is a bloom filter
@@ -100,21 +112,9 @@ if err != nil {
 
 Where possible, branch-free operations are used to avoid deep pipeline / execution unit stalls on branch-misses.
 
-## Get
-
-    go get -u github.com/steakknife/bloomfilter  # master is always stable
-
-## Source
-
-- On the web: [https://github.com/steakknife/bloomfilter](https://github.com/steakknife/bloomfilter)
-
-- Git: `git clone https://github.com/steakknife/bloomfilter`
-
 ## Contact
 
-- [Feedback](mailto:barry.allard@gmail.com)
-
-- [Issues](https://github.com/steakknife/bloomfilter/issues)
+- [Issues](https://github.com/holiman/bloomfilter/issues)
 
 ## License
 

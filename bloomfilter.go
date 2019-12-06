@@ -49,11 +49,30 @@ func (f *Filter) K() uint64 {
 func (f *Filter) Add(v hash.Hash64) {
 	f.lock.Lock()
 	defer f.lock.Unlock()
+	var (
+		hash = v.Sum64()
+		n    = len(f.keys)
+		res  uint64
+	)
+	for i := 0; i < n; i++ {
+		res = (hash ^ f.keys[i]) % f.m
+		f.bits[res>>6] |= 1 << uint(res&0x3f)
+	}
+	f.n++
+}
 
-	for _, i := range f.hash(v) {
-		// f.setBit(i)
-		i %= f.m
-		f.bits[i>>6] |= 1 << uint(i&0x3f)
+// Adds an already hashes item to the filter.
+// Identical to Add (but slightly faster)
+func (f *Filter) AddHash(hash uint64) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+	var (
+		n   = len(f.keys)
+		res uint64
+	)
+	for i := 0; i < n; i++ {
+		res = (hash ^ f.keys[i]) % f.m
+		f.bits[res>>6] |= 1 << uint(res&0x3f)
 	}
 	f.n++
 }

@@ -94,14 +94,42 @@ func Test0(t *testing.T) {
 }
 
 func BenchmarkAddX10kX5(b *testing.B) {
-	b.StopTimer()
 	bf, _ := New(10000, 5)
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		bf.Add(hashableUint64(rand.Uint32()))
-	}
+	b.Run("add-10kx5", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			bf.Add(hashableUint64(rand.Uint32()))
+		}
+	})
+	b.Run("add-10kx5-hash", func(b *testing.B) {
+		b.ReportAllocs()
+		for i := 0; i < b.N; i++ {
+			bf.AddHash(uint64(rand.Uint32()))
+		}
+	})
 }
 
+func TestAddX10kX5(t *testing.T) {
+	b1, _ := New(10000, 5)
+	b2, _ := b1.NewCompatible()
+
+	verify := func() {
+		for i := 0; i < len(b1.bits); i++ {
+			if b1.bits[i] != b2.bits[i] {
+				t.Fatalf("error at bit %d!", i)
+			}
+		}
+	}
+	for i := 0; i < 1000000; i++ {
+		v := hashableUint64(rand.Uint32())
+		b1.Add(v)
+		b2.AddHash(v.Sum64())
+		verify()
+		if !b2.Contains(v) {
+			t.Fatal("contain error")
+		}
+	}
+}
 func BenchmarkContains1kX10kX5(b *testing.B) {
 	b.StopTimer()
 	bf, _ := New(10000, 5)
@@ -115,6 +143,7 @@ func BenchmarkContains1kX10kX5(b *testing.B) {
 }
 
 func BenchmarkContains100kX10BX20(b *testing.B) {
+	rand.Seed(1337)
 	b.StopTimer()
 	bf, _ := New(10*1000*1000*1000, 20)
 	for i := 0; i < 100*1000; i++ {

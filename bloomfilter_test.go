@@ -125,3 +125,25 @@ func BenchmarkContains100kX10BX20(b *testing.B) {
 		bf.Contains(hashableUint64(rand.Uint32()))
 	}
 }
+
+//BenchmarkUnionInPlace/union-8-6         	   15270	     77848 ns/op
+func BenchmarkUnionInPlace(b *testing.B) {
+	var filters []*Filter
+	b1, _ := New(813129, 6)
+	for i := 0; i < 2000; i++ {
+		b1.Add(hashableUint64(rand.Uint32()))
+	}
+	filters = append(filters, b1)
+	for i := 0; i < 7; i++ {
+		b, _ := b1.NewCompatible()
+		filters = append(filters, b)
+	}
+	b.ResetTimer()
+	b.Run("union-8", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			for _, bx := range filters {
+				b1.UnionInPlace(bx)
+			}
+		}
+	})
+}

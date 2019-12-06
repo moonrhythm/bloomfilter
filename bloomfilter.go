@@ -100,6 +100,8 @@ func (f *Filter) UnionInPlace(f2 *Filter) error {
 	for i, bitword := range f2.bits {
 		f.bits[i] |= bitword
 	}
+	// Also update the counters
+	f.n += f2.n
 	return nil
 }
 
@@ -119,5 +121,7 @@ func (f *Filter) Union(f2 *Filter) (out *Filter, err error) {
 	for i, bitword := range f2.bits {
 		out.bits[i] = f.bits[i] | bitword
 	}
+	// Also update the counters
+	out.n = f.n + f2.n
 	return out, nil
 }

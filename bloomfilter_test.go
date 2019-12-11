@@ -131,15 +131,20 @@ func TestAddX10kX5(t *testing.T) {
 	}
 }
 func BenchmarkContains1kX10kX5(b *testing.B) {
-	b.StopTimer()
 	bf, _ := New(10000, 5)
 	for i := 0; i < 1000; i++ {
 		bf.Add(hashableUint64(rand.Uint32()))
 	}
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		bf.Contains(hashableUint64(rand.Uint32()))
-	}
+	b.Run("contains", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			bf.Contains(hashableUint64(rand.Uint32()))
+		}
+	})
+	b.Run("containsHash", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			bf.ContainsHash(uint64(rand.Uint32()))
+		}
+	})
 }
 
 func BenchmarkContains100kX10BX20(b *testing.B) {
@@ -149,9 +154,27 @@ func BenchmarkContains100kX10BX20(b *testing.B) {
 	for i := 0; i < 100*1000; i++ {
 		bf.Add(hashableUint64(rand.Uint32()))
 	}
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		bf.Contains(hashableUint64(rand.Uint32()))
+	b.Run("contains", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			bf.Contains(hashableUint64(rand.Uint32()))
+		}
+	})
+	b.Run("containshash", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			bf.ContainsHash(uint64(rand.Uint32()))
+		}
+	})
+}
+
+func TestContains(t *testing.T) {
+	rand.Seed(1337)
+	bf, _ := New(10*1000*1000, 20)
+	for i := 0; i < 100*10000; i++ {
+		x := hashableUint64(rand.Uint32())
+		bf.Add(x)
+		if !bf.Contains(x) {
+			t.Fatalf("Did not contain newly added elem: %d", x.Sum64())
+		}
 	}
 }
 
@@ -173,6 +196,27 @@ func BenchmarkUnionInPlace(b *testing.B) {
 			for _, bx := range filters {
 				b1.UnionInPlace(bx)
 			}
+		}
+	})
+}
+
+func BenchmarkContains94percentMisses(b *testing.B) {
+	// This test should produce about
+	// 5.4K hits and 94k misses
+	rand.Seed(1337)
+	b.StopTimer()
+	bf, _ := New(10*1000*1000, 20)
+	for i := 0; i < 100*1000; i++ {
+		bf.Add(hashableUint64(rand.Uint32()))
+	}
+	b.Run("contains", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			bf.Contains(hashableUint64(rand.Uint32()))
+		}
+	})
+	b.Run("containsHash", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			bf.ContainsHash(uint64(rand.Uint32()))
 		}
 	})
 }

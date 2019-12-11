@@ -82,6 +82,22 @@ func (f *Filter) Contains(v hash.Hash64) bool {
 	return uint64ToBool(r)
 }
 
+// ContainsHash tests if f contains the (already hashed) key
+// Identical to Contains but slightly faster
+func (f *Filter) ContainsHash(hash uint64) bool {
+	f.lock.RLock()
+	defer f.lock.RUnlock()
+	var (
+		i uint64
+		r = uint64(1)
+	)
+	for n := 0; n < len(f.keys); n++ {
+		i = (hash ^ f.keys[n]) % f.m
+		r &= (f.bits[i>>6] >> uint(i&0x3f)) & 1
+	}
+	return uint64ToBool(r)
+}
+
 // Copy f to a new Bloom filter
 func (f *Filter) Copy() (*Filter, error) {
 	f.lock.RLock()

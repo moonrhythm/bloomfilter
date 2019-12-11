@@ -15,7 +15,6 @@ All recent changes are copyright © 2019 Martin Holst Swende.
 $ go get github.com/holiman/bloomfilter
 ```
 
-
 # Face-meltingly fast, thread-safe, marshalable, unionable, probability- and optimal-size-calculating Bloom filter in go
 
 Copyright © 2014-2016,2018 Barry Allard

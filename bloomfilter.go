@@ -75,7 +75,7 @@ func (f *Filter) Contains(v hash.Hash64) bool {
 		i    uint64
 		r    = uint64(1)
 	)
-	for n := 0; n < len(f.keys); n++ {
+	for n := 0; n < len(f.keys) && r != 0; n++ {
 		i = (hash ^ f.keys[n]) % f.m
 		r &= (f.bits[i>>6] >> uint(i&0x3f)) & 1
 	}
@@ -91,7 +91,7 @@ func (f *Filter) ContainsHash(hash uint64) bool {
 		i uint64
 		r = uint64(1)
 	)
-	for n := 0; n < len(f.keys); n++ {
+	for n := 0; n < len(f.keys) && r != 0; n++ {
 		i = (hash ^ f.keys[n]) % f.m
 		r &= (f.bits[i>>6] >> uint(i&0x3f)) & 1
 	}

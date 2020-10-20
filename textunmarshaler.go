@@ -78,7 +78,7 @@ func unmarshalAndCheckTextHash(r io.Reader, f *Filter) (err error) {
 		}
 	}
 
-	_, expectedHash, err := f.marshal()
+	_, expectedHash, err := f.MarshallToWriter(devnull{})
 	if err != nil {
 		return err
 	}

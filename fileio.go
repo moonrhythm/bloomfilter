@@ -80,12 +80,7 @@ func (f *Filter) WriteTo(w io.Writer) (n int64, err error) {
 		err = rawW.Close()
 	}()
 
-	content, err := f.MarshalBinary()
-	if err != nil {
-		return -1, err
-	}
-
-	intN, err := rawW.Write(content)
+	intN, _, err := f.MarshallToWriter(rawW)
 	n = int64(intN)
 	return n, err
 }

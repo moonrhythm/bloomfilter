@@ -14,11 +14,24 @@ import (
 	"bytes"
 	"crypto/sha512"
 	"encoding/binary"
+	"io"
 )
+
+// counter is a utility to count bytes written
+type counter struct {
+	bytes int
+}
+
+func (c *counter) Write(p []byte) (n int, err error) {
+	count := len(p)
+	c.bytes += count
+	return count, nil
+}
 
 // conforms to encoding.BinaryMarshaler
 
-// marshalled binary layout (Little Endian):
+// MarshallToWriter marshalls the filter into the given io.Writer
+// Binary layout (Little Endian):
 //
 //	 k	1 uint64
 //	 n	1 uint64
@@ -29,59 +42,68 @@ import (
 //
 //	 size = (3 + k + (m+63)/64) * 8 bytes
 //
-
-func (f *Filter) marshal() (buf *bytes.Buffer,
-	hash [sha512.Size384]byte,
-	err error,
-) {
+func (f *Filter) MarshallToWriter(out io.Writer) (int, [sha512.Size384]byte, error) {
+	var (
+		c      = &counter{0}
+		hasher = sha512.New384()
+		mw     = io.MultiWriter(out, hasher, c)
+		hash   [sha512.Size384]byte
+	)
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-
 	debug("write bf k=%d n=%d m=%d\n", f.K(), f.n, f.m)
 
-	buf = new(bytes.Buffer)
-
-	err = binary.Write(buf, binary.LittleEndian, f.K())
-	if err != nil {
-		return nil, hash, err
+	if err := binary.Write(mw, binary.LittleEndian, f.K()); err != nil {
+		return c.bytes, hash, err
 	}
-
-	err = binary.Write(buf, binary.LittleEndian, f.n)
-	if err != nil {
-		return nil, hash, err
+	if err := binary.Write(mw, binary.LittleEndian, f.n); err != nil {
+		return c.bytes, hash, err
 	}
-
-	err = binary.Write(buf, binary.LittleEndian, f.m)
-	if err != nil {
-		return nil, hash, err
+	if err := binary.Write(mw, binary.LittleEndian, f.m); err != nil {
+		return c.bytes, hash, err
 	}
-
-	err = binary.Write(buf, binary.LittleEndian, f.keys)
-	if err != nil {
-		return nil, hash, err
+	if err := binary.Write(mw, binary.LittleEndian, f.keys); err != nil {
+		return c.bytes, hash, err
 	}
-
-	err = binary.Write(buf, binary.LittleEndian, f.bits)
-	if err != nil {
-		return nil, hash, err
+	// Write it in chunks of 5% (but at least 4K). Otherwise, the binary.Write will allocate a
+	// same-size slice of bytes, doubling the memory usage
+	var chunkSize = len(f.bits) / 20
+	if chunkSize < 512 {
+		chunkSize = 512 // Min 4K bytes (512 uint64s)
 	}
-
-	hash = sha512.Sum384(buf.Bytes())
-	err = binary.Write(buf, binary.LittleEndian, hash)
-	return buf, hash, err
+	bs := make([]byte, chunkSize*8)
+	for start := 0; start < len(f.bits); {
+		end := start + chunkSize
+		if end > len(f.bits) {
+			end = len(f.bits)
+		}
+		for i, x := range f.bits[start:end] {
+			binary.LittleEndian.PutUint64(bs[8*i:], x)
+		}
+		if _, err := mw.Write(bs[0 : (end-start)*8]); err != nil {
+			return c.bytes, hash, err
+		}
+		start = end
+	}
+	// Now we stop using the multiwriter, pick out the hash of what we've
+	// written so far, and then write the hash to the output
+	hashbytes := hasher.Sum(nil)
+	copy(hash[:], hashbytes[:sha512.Size384])
+	err := binary.Write(out, binary.LittleEndian, hashbytes)
+	if err != nil {
+		debug("bloomfilter.MarshalBinary: Successfully wrote %d byte(s), sha384 %v",
+			c.bytes, hash)
+	}
+	return c.bytes, hash, err
 }
 
 // MarshalBinary converts a Filter into []bytes
 func (f *Filter) MarshalBinary() (data []byte, err error) {
-	buf, hash, err := f.marshal()
+	buf := new(bytes.Buffer)
+	_, _, err = f.MarshallToWriter(buf)
 	if err != nil {
 		return nil, err
 	}
-
-	debug(
-		"bloomfilter.MarshalBinary: Successfully wrote %d byte(s), sha384 %v",
-		buf.Len(), hash,
-	)
 	data = buf.Bytes()
 	return data, nil
 }

@@ -34,7 +34,7 @@ func (f *Filter) MarshalText() (text []byte, err error) {
 		s += fmt.Sprintf(bitsFormat, w) + nl()
 	}
 
-	_, hash, err := f.marshal()
+	_, hash, err := f.MarshallToWriter(devnull{})
 	if err != nil {
 		return nil, err
 	}

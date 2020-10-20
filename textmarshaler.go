@@ -12,6 +12,12 @@ package bloomfilter
 
 import "fmt"
 
+type devnull struct{}
+
+func (d devnull) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
 // MarshalText conforms to encoding.TextMarshaler
 func (f *Filter) MarshalText() (text []byte, err error) {
 	f.lock.RLock()

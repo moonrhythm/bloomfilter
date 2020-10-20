@@ -62,11 +62,6 @@ func totAllocMb() uint64 {
 	return bToMb(m.TotalAlloc)
 }
 
-type devnull struct{}
-func (d devnull) Write(p []byte) (n int, err error) {
-	return len(p), nil
-}
-
 func TestWrite(t *testing.T) {
 	// 1Mb
 	f, _ := New(4*8*1024*1024, 1)

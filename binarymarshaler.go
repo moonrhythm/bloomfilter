@@ -94,7 +94,7 @@ func (f *Filter) MarshallToWriter(out io.Writer) (int, [sha512.Size384]byte, err
 		debug("bloomfilter.MarshalBinary: Successfully wrote %d byte(s), sha384 %v",
 			c.bytes, hash)
 	}
-	return c.bytes, hash, err
+	return c.bytes + len(hashbytes), hash, err
 }
 
 // MarshalBinary converts a Filter into []bytes

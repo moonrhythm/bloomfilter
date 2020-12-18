@@ -12,16 +12,23 @@ package bloomfilter
 
 import (
 	"math"
-
-	"github.com/steakknife/hamming"
+	"math/bits"
 )
+
+// CountBitsUint64s count 1's in b
+func CountBitsUint64s(b []uint64) int {
+	c := 0
+	for _, x := range b {
+		c += bits.OnesCount64(x)
+	}
+	return c
+}
 
 // PreciseFilledRatio is an exhaustive count # of 1's
 func (f *Filter) PreciseFilledRatio() float64 {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-
-	return float64(hamming.CountBitsUint64s(f.bits)) / float64(f.M())
+	return float64(CountBitsUint64s(f.bits)) / float64(f.M())
 }
 
 // N is how many elements have been inserted
@@ -39,5 +46,5 @@ func (f *Filter) FalsePosititveProbability() float64 {
 	k := float64(f.K())
 	n := float64(f.N())
 	m := float64(f.M())
-	return math.Pow(1.0-math.Exp(-k)*(n+0.5)/(m-1), k)
+	return math.Pow(1.0-math.Exp((-k)*(n+0.5)/(m-1)), k)
 }

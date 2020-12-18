@@ -11,9 +11,9 @@
 package bloomfilter
 
 import (
-	"crypto/rand"
+	crand "crypto/rand"
 	"encoding/binary"
-	"log"
+	"fmt"
 )
 
 const (
@@ -31,17 +31,14 @@ const (
 //
 // k is the number of random keys, >= 1
 func New(m, k uint64) (*Filter, error) {
-	return NewWithKeys(m, newRandKeys(k))
+	return NewWithKeys(m, newRandKeys(m, k))
 }
 
-func newRandKeys(k uint64) []uint64 {
+func newRandKeys(m uint64, k uint64) []uint64 {
 	keys := make([]uint64, k)
-	err := binary.Read(rand.Reader, binary.LittleEndian, keys)
-	if err != nil {
-		log.Panicf(
-			"Cannot read %d bytes from CSRPNG crypto/rand.Read (err=%v)",
-			Uint64Bytes, err,
-		)
+	if err := binary.Read(crand.Reader, binary.LittleEndian, keys); err != nil {
+		panic(fmt.Sprintf("Cannot read %d bytes from CSRPNG crypto/rand.Read (err=%v)",
+			Uint64Bytes, err))
 	}
 	return keys
 }
@@ -55,10 +52,8 @@ func (f *Filter) NewCompatible() (*Filter, error) {
 func NewOptimal(maxN uint64, p float64) (*Filter, error) {
 	m := OptimalM(maxN, p)
 	k := OptimalK(m, maxN)
-	debug("New optimal bloom filter ::"+
-		" requested max elements (n):%d,"+
-		" probability of collision (p):%1.10f "+
-		"-> recommends -> bits (m): %d (%f GiB), "+
+	debug("New optimal bloom filter :: requested max elements (n):%d,"+
+		" probability of collision (p):%1.10f -> recommends -> bits (m): %d (%f GiB), "+
 		"number of keys (k): %d",
 		maxN, p, m, float64(m)/(gigabitsPerGiB), k)
 	return New(m, k)
@@ -67,14 +62,24 @@ func NewOptimal(maxN uint64, p float64) (*Filter, error) {
 // UniqueKeys is true if all keys are unique
 func UniqueKeys(keys []uint64) bool {
 	for j := 0; j < len(keys)-1; j++ {
-		elem := keys[j]
-		for i := 1; i < j; i++ {
-			if keys[i] == elem {
+		for i := j + 1; i < len(keys); i++ {
+			if i == j {
+				continue
+			}
+			if keys[i] == keys[j] {
 				return false
 			}
 		}
 	}
 	return true
+}
+
+func (f *Filter) Keys() []uint64 {
+	var cpy []uint64
+	for _, v := range f.keys {
+		cpy = append(cpy, v)
+	}
+	return cpy
 }
 
 // NewWithKeys creates a new Filter from user-supplied origKeys

@@ -13,7 +13,6 @@ package bloomfilter
 import (
 	"compress/gzip"
 	"io"
-	"io/ioutil"
 	"os"
 )
 
@@ -38,18 +37,9 @@ func ReadFrom(r io.Reader) (f *Filter, n int64, err error) {
 	if err != nil {
 		return nil, -1, err
 	}
-	defer func() {
-		err = rawR.Close()
-	}()
-
-	content, err := ioutil.ReadAll(rawR)
-	if err != nil {
-		return nil, -1, err
-	}
-
+	defer rawR.Close()
 	f = new(Filter)
-	n = int64(len(content))
-	err = f.UnmarshalBinary(content)
+	n, err = f.UnmarshalFromReader(rawR)
 	if err != nil {
 		return nil, -1, err
 	}
@@ -63,9 +53,7 @@ func ReadFile(filename string) (f *Filter, n int64, err error) {
 	if err != nil {
 		return nil, -1, err
 	}
-	defer func() {
-		err = r.Close()
-	}()
+	defer r.Close()
 
 	return ReadFrom(r)
 }

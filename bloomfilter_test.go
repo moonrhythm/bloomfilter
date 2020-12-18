@@ -11,6 +11,7 @@
 package bloomfilter
 
 import (
+	"fmt"
 	"math/rand"
 	"testing"
 )
@@ -219,4 +220,55 @@ func BenchmarkContains94percentMisses(b *testing.B) {
 			bf.ContainsHash(uint64(rand.Uint32()))
 		}
 	})
+}
+
+// This test is quite long-running, thus disabled
+func TestHitrate(t *testing.T) {
+	t.Skip("Long-running test, use only for sanity-checking")
+	/**
+	After changes:
+
+	Fill ratio: 9.303936 %
+	Theoretical hitrate : 0.007493 %
+	Hit rate (100K random tests): 0.009000 % (9 out of 100000)
+	Hit rate (100K random tests): 0.009000 % (9 out of 100000)
+	Zero-filter Hit rate (100K random tests): 9.373000 % (9373 out of 100000)
+	1-filter Hit rate: 9.474021 % (888 out of 9373)
+
+	Original changes:
+
+	Fill ratio: 9.303647 %
+	Theoretical hitrate : 0.007492 %
+	Hit rate (100K random tests): 2.658000 % (2658 out of 100000)
+	Zero-filter Hit rate (100K random tests): 9.456000 % (9456 out of 100000)
+	1-filter Hit rate: 53.489848 % (5058 out of 9456)
+
+	*/
+	// 512 MB bloom filter
+	f, _ := New(512*1024*1024*8, 4)
+
+	// Fill it with 100M items
+	for i := 0; i < 100*1024*1024; i++ {
+		val := rand.Uint64()
+		f.AddHash(val)
+		if !f.ContainsHash(val) {
+			t.Fatalf("Missing value (just inserted) %d", val)
+		}
+	}
+	// Test individual matches
+	numTests := 100000
+	hits := 0
+
+	for i := 0; i < numTests; i++ {
+		h := rand.Uint64()
+		if f.ContainsHash(h) {
+			hits++
+		}
+	}
+	fmt.Printf("Error rate: %f %%\n", 100*f.FalsePosititveProbability())
+	// With four keys, we should obtain fillrate^4 chance of false positive
+	fp := f.PreciseFilledRatio()
+	fmt.Printf("Fill ratio: %02f %%\n", 100*fp)
+	fmt.Printf("Theoretical hitrate : %02f %%\n", 100*fp*fp*fp*fp)
+	fmt.Printf("Hit rate (100K random tests): %02f %% (%d out of %d) \n", 100*float64(hits)/float64(numTests), hits, numTests)
 }

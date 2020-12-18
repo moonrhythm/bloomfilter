@@ -10,12 +10,6 @@
 //
 package bloomfilter
 
-import "unsafe"
-
-func uint64ToBool(x uint64) bool {
-	return *(*bool)(unsafe.Pointer(&x)) // #nosec
-}
-
 // returns 0 if equal, does not compare len(b0) with len(b1)
 func noBranchCompareUint64s(b0, b1 []uint64) uint64 {
 	r := uint64(0)
@@ -37,5 +31,5 @@ func (f *Filter) IsCompatible(f2 *Filter) bool {
 	compat := f.M() ^ f2.M()
 	compat |= f.K() ^ f2.K()
 	compat |= noBranchCompareUint64s(f.keys, f2.keys)
-	return uint64ToBool(^compat)
+	return compat == 0
 }

@@ -8,6 +8,8 @@
 //
 // MIT license
 //
+// Copyright © 2020 Martin Holst Swende, continued on the work of Barry Allard
+
 package bloomfilter
 
 import (
@@ -36,18 +38,14 @@ func (f *Filter) K() uint64 {
 
 // Add a hashable item, v, to the filter
 func (f *Filter) Add(v hash.Hash64) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
-	var (
-		hash = v.Sum64()
-		i    uint64
-	)
-	for n := 0; n < len(f.keys); n++ {
-		i = (hash ^ f.keys[n]) % f.m
-		f.bits[i>>6] |= 1 << uint(i&0x3f)
-	}
-	f.n++
+	f.AddHash(v.Sum64())
 }
+
+// rotation sets how much to rotate the hash on each filter iteration. This
+// is somewhat randomly set to a prime on the lower segment of 64. At 17, the cycle
+// does not repeat for quite a while, but even for low number of filters the
+// changes are quite rapid
+const rotation = 17
 
 // Adds an already hashes item to the filter.
 // Identical to Add (but slightly faster)
@@ -58,28 +56,11 @@ func (f *Filter) AddHash(hash uint64) {
 		i uint64
 	)
 	for n := 0; n < len(f.keys); n++ {
-		i = (hash ^ f.keys[n]) % f.m
+		hash = ((hash << rotation) | (hash >> (64 - rotation))) ^ f.keys[n]
+		i = hash % f.m
 		f.bits[i>>6] |= 1 << uint(i&0x3f)
 	}
 	f.n++
-}
-
-// Contains tests if f contains v
-// false: f definitely does not contain value v
-// true:  f maybe contains value v
-func (f *Filter) Contains(v hash.Hash64) bool {
-	f.lock.RLock()
-	defer f.lock.RUnlock()
-	var (
-		hash = v.Sum64()
-		i    uint64
-		r    = uint64(1)
-	)
-	for n := 0; n < len(f.keys) && r != 0; n++ {
-		i = (hash ^ f.keys[n]) % f.m
-		r &= (f.bits[i>>6] >> uint(i&0x3f)) & 1
-	}
-	return uint64ToBool(r)
 }
 
 // ContainsHash tests if f contains the (already hashed) key
@@ -92,10 +73,18 @@ func (f *Filter) ContainsHash(hash uint64) bool {
 		r = uint64(1)
 	)
 	for n := 0; n < len(f.keys) && r != 0; n++ {
-		i = (hash ^ f.keys[n]) % f.m
+		hash = ((hash << rotation) | (hash >> (64 - rotation))) ^ f.keys[n]
+		i = hash % f.m
 		r &= (f.bits[i>>6] >> uint(i&0x3f)) & 1
 	}
-	return uint64ToBool(r)
+	return r != 0
+}
+
+// Contains tests if f contains v
+// false: f definitely does not contain value v
+// true:  f maybe contains value v
+func (f *Filter) Contains(v hash.Hash64) bool {
+	return f.ContainsHash(v.Sum64())
 }
 
 // Copy f to a new Bloom filter

@@ -148,7 +148,10 @@ func TestUnion(t *testing.T) {
 		}
 	}
 	// And test merging f1 into f2
-	f2.UnionInPlace(f1)
+	if err := f2.UnionInPlace(f1); err != nil {
+		t.Fatal(err)
+	}
+
 	for i, v := range tests {
 		if !f2.Contains(v) {
 			t.Errorf("missing item %d", i)

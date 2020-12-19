@@ -16,6 +16,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"math/rand"
+	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 )
@@ -49,12 +51,32 @@ func TestWriteRead(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
+		cpy := append([]byte{}, b.Bytes()...)
 		var f2 *Filter
 		if f2, _, err = ReadFrom(&b); err != nil {
 			t.Fatal(err)
 		}
 		verify(t, f2)
+		// test overwrite
+		f3, _ := New(8*5, 3)
+		if _, err = f3.ReadFrom(bytes.NewReader(cpy)); err != nil {
+			t.Fatal(err)
+		}
+		verify(t, f3)
 	})
+	t.Run("gob", func(t *testing.T) {
+		data, err := f.GobEncode()
+		if err != nil {
+			t.Fatal(err)
+		}
+		var f2 Filter
+		err = f2.GobDecode(data)
+		if err != nil {
+			t.Fatal(err)
+		}
+		verify(t, &f2)
+	})
+
 	t.Run("json", func(t *testing.T) {
 		data, err := json.Marshal(f)
 		if err != nil {
@@ -66,6 +88,57 @@ func TestWriteRead(t *testing.T) {
 		}
 		verify(t, &f2)
 	})
+	t.Run("file", func(t *testing.T) {
+		fName := filepath.Join(os.TempDir(), "temp.deleteme")
+		if _, err := f.WriteFile(fName); err != nil {
+			t.Fatal(err)
+		}
+		defer os.Remove(fName)
+		if f2, _, err := ReadFile(fName); err != nil {
+			t.Fatal(err)
+		} else {
+			verify(t, f2)
+		}
+	})
+
+}
+
+func TestCorruption(t *testing.T) {
+	// minimal filter
+	f, _ := New(8*32, 5)
+	// Add some content
+	var tests = make([]hashableUint64, 20)
+	for i := 0; i < 20; i++ {
+		tests[i] = hashableUint64(rand.Uint64())
+		f.Add(tests[i])
+	}
+	t.Run("binary", func(t *testing.T) {
+		var b bytes.Buffer
+		_, err := f.WriteTo(&b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		buf := b.Bytes()
+		buf[len(buf)/2] ^= 1
+		if _, _, err := ReadFrom(&b); err == nil {
+			t.Errorf("expected error")
+		}
+	})
+
+	t.Run("gob", func(t *testing.T) {
+		data, err := f.GobEncode()
+		if err != nil {
+			t.Fatal(err)
+		}
+		// Flip a bit
+		data[len(data)/2] ^= 1
+		var f2 Filter
+		err = f2.GobDecode(data)
+		if err == nil {
+			t.Errorf("expected error")
+		}
+	})
+
 }
 
 func bToMb(b uint64) uint64 {

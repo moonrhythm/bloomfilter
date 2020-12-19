@@ -62,13 +62,7 @@ func (f *Filter) MarshallToWriter(out io.Writer) (int, [sha512.Size384]byte, err
 	if _, err := mw.Write(headerMagic); err != nil {
 		return c.bytes, hash, err
 	}
-	if err := binary.Write(mw, binary.LittleEndian, f.K()); err != nil {
-		return c.bytes, hash, err
-	}
-	if err := binary.Write(mw, binary.LittleEndian, f.n); err != nil {
-		return c.bytes, hash, err
-	}
-	if err := binary.Write(mw, binary.LittleEndian, f.m); err != nil {
+	if err := binary.Write(mw, binary.LittleEndian, []uint64{f.K(), f.n, f.m}); err != nil {
 		return c.bytes, hash, err
 	}
 	if err := binary.Write(mw, binary.LittleEndian, f.keys); err != nil {

@@ -120,7 +120,7 @@ func newBits(m uint64) ([]uint64, error) {
 
 func newKeysBlank(k uint64) ([]uint64, error) {
 	if k < KMin {
-		return nil,  fmt.Errorf("keys must have length %d or greater (was %d)", KMin, k)
+		return nil, fmt.Errorf("keys must have length %d or greater (was %d)", KMin, k)
 	}
 	return make([]uint64, k), nil
 }

@@ -13,6 +13,7 @@ package bloomfilter
 import (
 	"encoding"
 	"encoding/gob"
+	"encoding/json"
 	"io"
 )
 
@@ -26,4 +27,6 @@ var (
 	_ io.WriterTo                = (*Filter)(nil)
 	_ gob.GobDecoder             = (*Filter)(nil)
 	_ gob.GobEncoder             = (*Filter)(nil)
+	_ json.Marshaler             = (*Filter)(nil)
+	_ json.Unmarshaler           = (*Filter)(nil)
 )

@@ -13,6 +13,7 @@ package bloomfilter
 import (
 	"bytes"
 	"crypto/sha512"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"runtime"
@@ -33,6 +34,20 @@ func TestWriteRead(t *testing.T) {
 		}
 		var f2 *Filter
 		if f2, _, err = ReadFrom(&b); err != nil {
+			t.Fatal(err)
+		}
+		if !f2.Contains(v) {
+			t.Error("Filters not equal")
+		}
+	})
+	t.Run("json", func(t *testing.T) {
+		data, err := json.Marshal(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf(string(data))
+		var f2 Filter
+		if err = json.Unmarshal(data, &f2); err != nil {
 			t.Fatal(err)
 		}
 		if !f2.Contains(v) {

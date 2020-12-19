@@ -21,8 +21,6 @@ import (
 var (
 	_ encoding.BinaryMarshaler   = (*Filter)(nil)
 	_ encoding.BinaryUnmarshaler = (*Filter)(nil)
-	_ encoding.TextMarshaler     = (*Filter)(nil)
-	_ encoding.TextUnmarshaler   = (*Filter)(nil)
 	_ io.ReaderFrom              = (*Filter)(nil)
 	_ io.WriterTo                = (*Filter)(nil)
 	_ gob.GobDecoder             = (*Filter)(nil)

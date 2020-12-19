@@ -5,7 +5,7 @@
 // https://github.com/steakknife/bloomfilter
 //
 // Copyright © 2014, 2015, 2018 Barry Allard
-//
+// Copyright © 2018, 2020 Martin Holst Swende
 // MIT license
 //
 package bloomfilter
@@ -20,11 +20,28 @@ import (
 	"testing"
 )
 
+type devnull struct{}
+
+func (d devnull) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
 func TestWriteRead(t *testing.T) {
 	// minimal filter
-	f, _ := New(2, 1)
-	v := hashableUint64(0)
-	f.Add(v)
+	f, _ := New(8*32, 5)
+	// Add some content
+	var tests = make([]hashableUint64, 20)
+	for i := 0; i < 20; i++ {
+		tests[i] = hashableUint64(rand.Uint64())
+		f.Add(tests[i])
+	}
+	verify := func(t *testing.T, f *Filter) {
+		for i, v := range tests {
+			if !f.Contains(v) {
+				t.Errorf("missing item %d", i)
+			}
+		}
+	}
 
 	t.Run("binary", func(t *testing.T) {
 		var b bytes.Buffer
@@ -36,46 +53,18 @@ func TestWriteRead(t *testing.T) {
 		if f2, _, err = ReadFrom(&b); err != nil {
 			t.Fatal(err)
 		}
-		if !f2.Contains(v) {
-			t.Error("Filters not equal")
-		}
+		verify(t, f2)
 	})
 	t.Run("json", func(t *testing.T) {
 		data, err := json.Marshal(f)
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Printf(string(data))
 		var f2 Filter
 		if err = json.Unmarshal(data, &f2); err != nil {
 			t.Fatal(err)
 		}
-		if !f2.Contains(v) {
-			t.Error("Filters not equal")
-		}
-	})
-	t.Run("text", func(t *testing.T) {
-		text, err := f.MarshalText()
-		if err != nil {
-			t.Fatal(err)
-		}
-		fmt.Printf("%v\n", string(text))
-		var f2 *Filter
-		// Test create a new filter
-		if f2, err = UnmarshalText(text); err != nil {
-			t.Fatal(err)
-		}
-		if !f2.Contains(v) {
-			t.Error("Filters not equal")
-		}
-		// Test overwrite a filter
-		f3, _ := New(8, 8)
-		if err = f3.UnmarshalText(text); err != nil {
-			t.Fatal(err)
-		}
-		if !f3.Contains(v) {
-			t.Error("Filters not equal")
-		}
+		verify(t, &f2)
 	})
 }
 

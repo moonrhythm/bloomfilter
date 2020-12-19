@@ -60,12 +60,13 @@ All values in Little-endian format
 
 |Offset|Offset (Hex)|Length (bytes)|Name|Type|
 |---|---|---|---|---|
-|0|00|8|k|`uint64`|
-|8|08|8|n|`uint64`|
-|16|10|8|m|`uint64`|
-|24|18|k|(keys)|`[k]uint64`|
-|24+8*k|...|(m+63)/64|(bloom filter)|`[(m+63)/64]uint64`|
-|24+8\*k+8\*((m+63)/64)|...|48|(SHA384 of all previous fields, hashed in order)|`[48]byte`|
+|0|00|12|magic + version number|`\0\0\0\0\0\0\0\0v02\n`|
+|12|0c|8|k|`uint64`|
+|20|14|8|n|`uint64`|
+|28|1c|8|m|`uint64`|
+|36|24|k|(keys)|`[k]uint64`|
+|36+8*k|...|(m+63)/64|(bloom filter)|`[(m+63)/64]uint64`|
+|36+8\*k+8\*((m+63)/64)|...|48|(SHA384 of all previous fields, hashed in order)|`[48]byte`|
 
 - `bloomfilter.Filter` conforms to `encoding.BinaryMarshaler` and `encoding.BinaryUnmarshaler'
 

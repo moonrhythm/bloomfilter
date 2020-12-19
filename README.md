@@ -1,6 +1,8 @@
 
 [![GoDoc](https://godoc.org/github.com/holiman/bloomfilter?status.png)](https://godoc.org/github.com/holiman/bloomfilter)
 [![CircleCI](https://circleci.com/gh/holiman/bloomfilter.svg?style=svg)](https://app.circleci.com/pipelines/github/holiman/bloomfilter)
+[![codecov](https://codecov.io/gh/holiman/bloomfilter/branch/master/graph/badge.svg?token=O48l6LbHkL)](https://codecov.io/gh/holiman/bloomfilter)
+[![DeepSource](https://deepsource.io/gh/holiman/bloomfilter.svg/?label=active+issues&show_trend=true)](https://deepsource.io/gh/holiman/bloomfilter/?ref=repository-badge)
 
 # History
 

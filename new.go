@@ -18,10 +18,9 @@ import (
 )
 
 const (
-	MMin                   = 2 // MMin is the minimum Bloom filter bits count
-	KMin                   = 1 // KMin is the minimum number of keys
-	Uint64Bytes            = 8 // Uint64Bytes is the number of bytes in type uint64
-	gigabitsPerGiB float64 = 8.0 * 1024 * 1024 * 1024
+	MMin        = 2 // MMin is the minimum Bloom filter bits count
+	KMin        = 1 // KMin is the minimum number of keys
+	Uint64Bytes = 8 // Uint64Bytes is the number of bytes in type uint64
 )
 
 // OptimalK calculates the optimal k value for creating a new Bloom filter
@@ -81,9 +80,7 @@ func uniqueKeys(keys []uint64) bool {
 
 func (f *Filter) Keys() []uint64 {
 	var cpy []uint64
-	for _, v := range f.keys {
-		cpy = append(cpy, v)
-	}
+	cpy = append(cpy, f.keys...)
 	return cpy
 }
 
@@ -131,16 +128,4 @@ func newKeysCopy(origKeys []uint64) (keys []uint64, err error) {
 	}
 	copy(keys, origKeys)
 	return keys, err
-}
-
-func newWithKeysAndBits(m uint64, keys []uint64, bits []uint64, n uint64) (
-	f *Filter, err error,
-) {
-	f, err = NewWithKeys(m, keys)
-	if err != nil {
-		return nil, err
-	}
-	copy(f.bits, bits)
-	f.n = n
-	return f, nil
 }

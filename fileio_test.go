@@ -81,12 +81,6 @@ func PrintMemUsage() {
 	fmt.Printf("\tNumGC = %v\n", m.NumGC)
 }
 
-func totAllocMb() uint64 {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	return bToMb(m.TotalAlloc)
-}
-
 func TestWrite(t *testing.T) {
 	// 1Mb
 	f, _ := New(4*8*1024*1024, 1)
@@ -115,10 +109,10 @@ func TestMarshaller(t *testing.T) {
 	f, _ := New(1*8*1024*1024, 1)
 	fillRandom(f)
 	// Marshall using writer
-	f.MarshallToWriter(h1)
+	_, _, _ = f.MarshallToWriter(h1)
 	// Marshall as a blob
 	data, _ := f.MarshalBinary()
-	h2.Write(data)
+	_, _ = h2.Write(data)
 
 	if have, want := h1.Sum(nil), h2.Sum(nil); !bytes.Equal(have, want) {
 		t.Errorf("Marshalling error, have %x want %x", have, want)

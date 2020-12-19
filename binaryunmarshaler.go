@@ -87,7 +87,7 @@ func (h *hashingReader) Read(p []byte) (n int, err error) {
 	if err != nil {
 		return n, err
 	}
-	h.hasher.Write(p)
+	_, _ = h.hasher.Write(p)
 	return n, err
 }
 

@@ -195,7 +195,7 @@ func BenchmarkUnionInPlace(b *testing.B) {
 	b.Run("union-8", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			for _, bx := range filters {
-				b1.UnionInPlace(bx)
+				_ = b1.UnionInPlace(bx)
 			}
 		}
 	})

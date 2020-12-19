@@ -84,7 +84,7 @@ func unmarshalAndCheckTextHash(r io.Reader, f *Filter) (err error) {
 	}
 
 	if !hmac.Equal(expectedHash[:], actualHash[:]) {
-		return errHash()
+		return errHashMismatch
 	}
 
 	return nil

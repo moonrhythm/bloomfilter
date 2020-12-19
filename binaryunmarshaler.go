@@ -25,7 +25,7 @@ func unmarshalBinaryHeader(r io.Reader) (k, n, m uint64, err error) {
 	}
 
 	if k < KMin {
-		return k, n, m, errK()
+		return k, n, m, errTooSmallK
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &n)
@@ -39,7 +39,7 @@ func unmarshalBinaryHeader(r io.Reader) (k, n, m uint64, err error) {
 	}
 
 	if m < MMin {
-		return k, n, m, errM()
+		return k, n, m, errTooSmallM
 	}
 
 	debug("read bf k=%d n=%d m=%d\n", k, n, m)
@@ -126,9 +126,8 @@ func (f *Filter) UnmarshalFromReader(input io.Reader) (n int64, err error) {
 		return buf.tot, err
 	}
 	if !bytes.Equal(gotHash, expHash) {
-		debug("bloomfilter.UnmarshalBinary() sha384 hash failed:"+
-			" actual %v  expected %v", gotHash, expHash)
-		return buf.tot, errHash()
+		debug("bloomfilter.UnmarshalBinary() sha384 hash failed: actual %v  expected %v", gotHash, expHash)
+		return buf.tot, errHashMismatch
 	}
 	return buf.tot, nil
 }

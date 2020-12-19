@@ -13,8 +13,16 @@
 package bloomfilter
 
 import (
+	"errors"
+	"fmt"
 	"hash"
 	"sync"
+)
+
+var (
+	errHashMismatch = errors.New("hash mismatch, bloom filter corruption or wrong version")
+	errTooSmallK    = fmt.Errorf("keys must have length %d or greater", KMin)
+	errTooSmallM    = fmt.Errorf("number of bits in the filter must be >= %d", MMin)
 )
 
 // Filter is an opaque Bloom filter type
@@ -104,7 +112,7 @@ func (f *Filter) Copy() (*Filter, error) {
 // UnionInPlace merges Bloom filter f2 into f
 func (f *Filter) UnionInPlace(f2 *Filter) error {
 	if !f.IsCompatible(f2) {
-		return errIncompatibleBloomFilters()
+		return errors.New("incompatible bloom filters")
 	}
 
 	f.lock.Lock()
@@ -121,7 +129,7 @@ func (f *Filter) UnionInPlace(f2 *Filter) error {
 // Union merges f2 and f2 into a new Filter out
 func (f *Filter) Union(f2 *Filter) (out *Filter, err error) {
 	if !f.IsCompatible(f2) {
-		return nil, errIncompatibleBloomFilters()
+		return nil, errors.New("incompatible bloom filters")
 	}
 
 	f.lock.RLock()

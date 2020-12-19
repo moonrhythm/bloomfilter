@@ -12,6 +12,7 @@ package bloomfilter
 
 import (
 	"compress/gzip"
+	_ "encoding/gob" // make sure gob is available
 	"encoding/json"
 	"errors"
 	"io"
@@ -120,4 +121,14 @@ func (f *Filter) UnmarshalJSON(data []byte) error {
 	f.n = j.N
 	f.m = j.M
 	return nil
+}
+
+// GobDecode conforms to interface gob.GobDecoder
+func (f *Filter) GobDecode(data []byte) error {
+	return f.UnmarshalBinary(data)
+}
+
+// GobEncode conforms to interface gob.GobEncoder
+func (f *Filter) GobEncode() ([]byte, error) {
+	return f.MarshalBinary()
 }

@@ -49,8 +49,6 @@ func unmarshalBinaryHeader(r io.Reader) (k, n, m uint64, err error) {
 		return 0, 0, 0, fmt.Errorf("number of bits in the filter must be >= %d (was %d)", MMin, m)
 	}
 
-	debug("read bf k=%d n=%d m=%d\n", k, n, m)
-
 	return k, n, m, err
 }
 
@@ -133,7 +131,6 @@ func (f *Filter) UnmarshalFromReader(input io.Reader) (n int64, err error) {
 		return buf.tot, err
 	}
 	if !bytes.Equal(gotHash, expHash) {
-		debug("bloomfilter.UnmarshalBinary() sha384 hash failed: actual %v  expected %v", gotHash, expHash)
 		return buf.tot, errHashMismatch
 	}
 	return buf.tot, nil

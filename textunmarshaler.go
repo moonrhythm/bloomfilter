@@ -28,19 +28,24 @@ func nl() string {
 }
 
 func unmarshalTextHeader(r io.Reader) (k, n, m uint64, err error) {
-	format := "k" + nl() + "%d" + nl()
+
+	format := "version" + nl() + string(version) + nl()
+	format += "k" + nl() + "%d" + nl()
 	format += "n" + nl() + "%d" + nl()
 	format += "m" + nl() + "%d" + nl()
 	format += "keys" + nl()
 
-	_, err = fmt.Fscanf(r, format, k, n, m)
+	_, err = fmt.Fscanf(r, format, &k, &n, &m)
 	return k, n, m, err
 }
 
 func unmarshalTextKeys(r io.Reader, keys []uint64) (err error) {
 	for i := range keys {
-		_, err = fmt.Fscanf(r, keyFormat, keys[i])
+		_, err = fmt.Fscanf(r, keyFormat, &keys[i])
 		if err != nil {
+			return err
+		}
+		if _, err = fmt.Fscanf(r, nl()); err != nil {
 			return err
 		}
 	}
@@ -48,14 +53,16 @@ func unmarshalTextKeys(r io.Reader, keys []uint64) (err error) {
 }
 
 func unmarshalTextBits(r io.Reader, bits []uint64) (err error) {
-	_, err = fmt.Fscanf(r, "bits")
+	_, err = fmt.Fscanf(r, "bits"+nl())
 	if err != nil {
 		return err
 	}
-
 	for i := range bits {
-		_, err = fmt.Fscanf(r, bitsFormat, bits[i])
+		_, err = fmt.Fscanf(r, bitsFormat, &bits[i])
 		if err != nil {
+			return err
+		}
+		if _, err = fmt.Fscanf(r, nl()); err != nil {
 			return err
 		}
 	}
@@ -64,7 +71,7 @@ func unmarshalTextBits(r io.Reader, bits []uint64) (err error) {
 }
 
 func unmarshalAndCheckTextHash(r io.Reader, f *Filter) (err error) {
-	_, err = fmt.Fscanf(r, "sha384")
+	_, err = fmt.Fscanf(r, "sha384"+nl())
 	if err != nil {
 		return err
 	}
@@ -72,12 +79,11 @@ func unmarshalAndCheckTextHash(r io.Reader, f *Filter) (err error) {
 	actualHash := [sha512.Size384]byte{}
 
 	for i := range actualHash {
-		_, err = fmt.Fscanf(r, "%02x", actualHash[i])
+		_, err = fmt.Fscanf(r, "%02x", &actualHash[i])
 		if err != nil {
 			return err
 		}
 	}
-
 	_, expectedHash, err := f.MarshallToWriter(devnull{})
 	if err != nil {
 		return err
@@ -136,15 +142,15 @@ func (f *Filter) UnmarshalText(text []byte) error {
 	f.lock.Lock()
 	defer f.lock.Unlock()
 
-	f2, err := UnmarshalText(text)
+	tmp, err := UnmarshalText(text)
 	if err != nil {
 		return err
 	}
 
-	f.m = f2.m
-	f.n = f2.n
-	copy(f.bits, f2.bits)
-	copy(f.keys, f2.keys)
+	f.m = tmp.m
+	f.n = tmp.n
+	f.bits = tmp.bits
+	f.keys = tmp.keys
 
 	return nil
 }

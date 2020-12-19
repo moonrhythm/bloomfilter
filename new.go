@@ -14,6 +14,7 @@ import (
 	crand "crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"math"
 )
 
 const (
@@ -112,14 +113,14 @@ func NewWithKeys(m uint64, origKeys []uint64) (f *Filter, err error) {
 
 func newBits(m uint64) ([]uint64, error) {
 	if m < MMin {
-		return nil, errTooSmallM
+		return nil, fmt.Errorf("number of bits in the filter must be >= %d (was %d)", MMin, m)
 	}
 	return make([]uint64, (m+63)/64), nil
 }
 
 func newKeysBlank(k uint64) ([]uint64, error) {
 	if k < KMin {
-		return nil, errTooSmallK
+		return nil,  fmt.Errorf("keys must have length %d or greater (was %d)", KMin, k)
 	}
 	return make([]uint64, k), nil
 }

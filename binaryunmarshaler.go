@@ -14,32 +14,39 @@ import (
 	"bytes"
 	"crypto/sha512"
 	"encoding/binary"
+	"fmt"
 	"hash"
 	"io"
 )
 
 func unmarshalBinaryHeader(r io.Reader) (k, n, m uint64, err error) {
+	magic := make([]byte, len(headerMagic))
+	if _, err := r.Read(magic); err != nil {
+		return 0, 0, 0, err
+	}
+	if !bytes.Equal(magic, headerMagic) {
+		return 0, 0, 0, fmt.Errorf("incompatible version (wrong magic), got %x", magic)
+	}
 	err = binary.Read(r, binary.LittleEndian, &k)
 	if err != nil {
-		return k, n, m, err
+		return 0, 0, 0, err
 	}
-
 	if k < KMin {
-		return k, n, m, errTooSmallK
+		return 0, 0, 0, fmt.Errorf("keys must have length %d or greater (was %d)", KMin, k)
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &n)
 	if err != nil {
-		return k, n, m, err
+		return 0, 0, 0, err
 	}
 
 	err = binary.Read(r, binary.LittleEndian, &m)
 	if err != nil {
-		return k, n, m, err
+		return 0, 0, 0, err
 	}
 
 	if m < MMin {
-		return k, n, m, errTooSmallM
+		return 0, 0, 0, fmt.Errorf("number of bits in the filter must be >= %d (was %d)", MMin, m)
 	}
 
 	debug("read bf k=%d n=%d m=%d\n", k, n, m)

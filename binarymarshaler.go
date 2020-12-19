@@ -17,6 +17,13 @@ import (
 	"io"
 )
 
+// headerMagic is used to disambiguate between this package and the original
+// steakknife implementation.
+// Since the key hashing algorithm has changed, the format is no longer
+// binary compatible
+var version = []byte("v02\n")
+var headerMagic = append([]byte{0, 0, 0, 0, 0, 0, 0, 0}, version...)
+
 // counter is a utility to count bytes written
 type counter struct {
 	bytes int
@@ -51,8 +58,10 @@ func (f *Filter) MarshallToWriter(out io.Writer) (int, [sha512.Size384]byte, err
 	)
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-	debug("write bf k=%d n=%d m=%d\n", f.K(), f.n, f.m)
 
+	if _, err := mw.Write(headerMagic); err != nil {
+		return c.bytes, hash, err
+	}
 	if err := binary.Write(mw, binary.LittleEndian, f.K()); err != nil {
 		return c.bytes, hash, err
 	}

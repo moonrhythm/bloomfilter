@@ -22,25 +22,46 @@ import (
 func TestWriteRead(t *testing.T) {
 	// minimal filter
 	f, _ := New(2, 1)
-
 	v := hashableUint64(0)
 	f.Add(v)
 
-	var b bytes.Buffer
-
-	_, err := f.WriteTo(&b)
-	if err != nil {
-		t.Error(err)
-	}
-
-	f2, _, err := ReadFrom(&b)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if !f2.Contains(v) {
-		t.Error("Filters not equal")
-	}
+	t.Run("binary", func(t *testing.T) {
+		var b bytes.Buffer
+		_, err := f.WriteTo(&b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var f2 *Filter
+		if f2, _, err = ReadFrom(&b); err != nil {
+			t.Fatal(err)
+		}
+		if !f2.Contains(v) {
+			t.Error("Filters not equal")
+		}
+	})
+	t.Run("text", func(t *testing.T) {
+		text, err := f.MarshalText()
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("%v\n", string(text))
+		var f2 *Filter
+		// Test create a new filter
+		if f2, err = UnmarshalText(text); err != nil {
+			t.Fatal(err)
+		}
+		if !f2.Contains(v) {
+			t.Error("Filters not equal")
+		}
+		// Test overwrite a filter
+		f3, _ := New(8, 8)
+		if err = f3.UnmarshalText(text); err != nil {
+			t.Fatal(err)
+		}
+		if !f3.Contains(v) {
+			t.Error("Filters not equal")
+		}
+	})
 }
 
 func bToMb(b uint64) uint64 {

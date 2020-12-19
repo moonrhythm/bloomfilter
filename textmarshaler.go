@@ -22,8 +22,9 @@ func (d devnull) Write(p []byte) (n int, err error) {
 func (f *Filter) MarshalText() (text []byte, err error) {
 	f.lock.RLock()
 	defer f.lock.RUnlock()
-
-	s := fmt.Sprintln("k")
+	s := fmt.Sprintln("version")
+	s += fmt.Sprintln(string(version))
+	s += fmt.Sprintln("k")
 	s += fmt.Sprintln(f.K())
 	s += fmt.Sprintln("n")
 	s += fmt.Sprintln(f.n)
@@ -31,12 +32,12 @@ func (f *Filter) MarshalText() (text []byte, err error) {
 	s += fmt.Sprintln(f.m)
 
 	s += fmt.Sprintln("keys")
-	for key := range f.keys {
+	for _, key := range f.keys {
 		s += fmt.Sprintf(keyFormat, key) + nl()
 	}
 
 	s += fmt.Sprintln("bits")
-	for w := range f.bits {
+	for _, w := range f.bits {
 		s += fmt.Sprintf(bitsFormat, w) + nl()
 	}
 
@@ -45,7 +46,7 @@ func (f *Filter) MarshalText() (text []byte, err error) {
 		return nil, err
 	}
 	s += fmt.Sprintln("sha384")
-	for b := range hash {
+	for _, b := range hash {
 		s += fmt.Sprintf("%02x", b)
 	}
 	s += nl()

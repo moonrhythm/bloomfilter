@@ -14,15 +14,12 @@ package bloomfilter
 
 import (
 	"errors"
-	"fmt"
 	"hash"
 	"sync"
 )
 
 var (
 	errHashMismatch = errors.New("hash mismatch, bloom filter corruption or wrong version")
-	errTooSmallK    = fmt.Errorf("keys must have length %d or greater", KMin)
-	errTooSmallM    = fmt.Errorf("number of bits in the filter must be >= %d", MMin)
 )
 
 // Filter is an opaque Bloom filter type

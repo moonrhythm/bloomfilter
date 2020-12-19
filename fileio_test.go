@@ -5,7 +5,7 @@
 // https://github.com/steakknife/bloomfilter
 //
 // Copyright © 2014, 2015, 2018 Barry Allard
-//
+// Copyright © 2018, 2020 Martin Holst Swende
 // MIT license
 //
 package bloomfilter
@@ -13,34 +13,59 @@ package bloomfilter
 import (
 	"bytes"
 	"crypto/sha512"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"runtime"
 	"testing"
 )
 
+type devnull struct{}
+
+func (d devnull) Write(p []byte) (n int, err error) {
+	return len(p), nil
+}
+
 func TestWriteRead(t *testing.T) {
 	// minimal filter
-	f, _ := New(2, 1)
-
-	v := hashableUint64(0)
-	f.Add(v)
-
-	var b bytes.Buffer
-
-	_, err := f.WriteTo(&b)
-	if err != nil {
-		t.Error(err)
+	f, _ := New(8*32, 5)
+	// Add some content
+	var tests = make([]hashableUint64, 20)
+	for i := 0; i < 20; i++ {
+		tests[i] = hashableUint64(rand.Uint64())
+		f.Add(tests[i])
+	}
+	verify := func(t *testing.T, f *Filter) {
+		for i, v := range tests {
+			if !f.Contains(v) {
+				t.Errorf("missing item %d", i)
+			}
+		}
 	}
 
-	f2, _, err := ReadFrom(&b)
-	if err != nil {
-		t.Error(err)
-	}
-
-	if !f2.Contains(v) {
-		t.Error("Filters not equal")
-	}
+	t.Run("binary", func(t *testing.T) {
+		var b bytes.Buffer
+		_, err := f.WriteTo(&b)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var f2 *Filter
+		if f2, _, err = ReadFrom(&b); err != nil {
+			t.Fatal(err)
+		}
+		verify(t, f2)
+	})
+	t.Run("json", func(t *testing.T) {
+		data, err := json.Marshal(f)
+		if err != nil {
+			t.Fatal(err)
+		}
+		var f2 Filter
+		if err = json.Unmarshal(data, &f2); err != nil {
+			t.Fatal(err)
+		}
+		verify(t, &f2)
+	})
 }
 
 func bToMb(b uint64) uint64 {
@@ -54,12 +79,6 @@ func PrintMemUsage() {
 	fmt.Printf("\tTotalAlloc = %v MiB", bToMb(m.TotalAlloc))
 	fmt.Printf("\tSys = %v MiB", bToMb(m.Sys))
 	fmt.Printf("\tNumGC = %v\n", m.NumGC)
-}
-
-func totAllocMb() uint64 {
-	var m runtime.MemStats
-	runtime.ReadMemStats(&m)
-	return bToMb(m.TotalAlloc)
 }
 
 func TestWrite(t *testing.T) {
@@ -90,10 +109,10 @@ func TestMarshaller(t *testing.T) {
 	f, _ := New(1*8*1024*1024, 1)
 	fillRandom(f)
 	// Marshall using writer
-	f.MarshallToWriter(h1)
+	_, _, _ = f.MarshallToWriter(h1)
 	// Marshall as a blob
 	data, _ := f.MarshalBinary()
-	h2.Write(data)
+	_, _ = h2.Write(data)
 
 	if have, want := h1.Sum(nil), h2.Sum(nil); !bytes.Equal(have, want) {
 		t.Errorf("Marshalling error, have %x want %x", have, want)

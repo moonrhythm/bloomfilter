@@ -1,5 +1,6 @@
 
-[![GoDoc](https://godoc.org/github.com/steakknife/bloomfilter?status.png)](https://godoc.org/github.com/steakknife/bloomfilter) [![travis](https://img.shields.io/travis/steakknife/bloomfilter.svg)](https://travis-ci.org/steakknife/bloomfilter)
+[![GoDoc](https://godoc.org/github.com/holiman/bloomfilter?status.png)](https://godoc.org/github.com/holiman/bloomfilter)
+[![CircleCI](https://circleci.com/gh/holiman/bloomfilter.svg?style=svg)](https://app.circleci.com/pipelines/github/holiman/bloomfilter)
 
 # History
 
@@ -7,7 +8,10 @@ This bloom filter implementation is a fork from [steakknife/bloomfilter](https:/
 The upstream project is now archived, so this fork exists to fix some bugs and also
 make a few improvements. Below is the original description. 
 
-All recent changes are copyright © 2019 Martin Holst Swende. 
+The original implemenation is Copyright © 2014-2016,2018 Barry Allard
+[MIT license](MIT-LICENSE.txt)
+
+All recent changes are copyright © 2019-2020 Martin Holst Swende. 
 
 ## Installation 
 
@@ -15,14 +19,11 @@ All recent changes are copyright © 2019 Martin Holst Swende.
 $ go get github.com/holiman/bloomfilter
 ```
 
-# Face-meltingly fast, thread-safe, marshalable, unionable, probability- and optimal-size-calculating Bloom filter in go
+## Face-meltingly fast, thread-safe, marshalable, unionable, probability- and optimal-size-calculating Bloom filter in go
 
-Copyright © 2014-2016,2018 Barry Allard
-[MIT license](MIT-LICENSE.txt)
+### WTF is a bloom filter
 
-## WTF is a bloom filter
-
-**TL;DR: **Probabilistic, extra lookup table to track a set of elements kept elsewhere to reduce expensive, unnecessary set element retrieval and/or iterator operations **when an element is not present in the set.** It's a classic time-storage tradeoff algoritm.
+**TL;DR:** Probabilistic, extra lookup table to track a set of elements kept elsewhere to reduce expensive, unnecessary set element retrieval and/or iterator operations **when an element is not present in the set.** It's a classic time-storage tradeoff algoritm.
 
 ### Properties
 
@@ -70,7 +71,7 @@ All values in Little-endian format
 
 ```go
 
-import "github.com/steakknife/bloomfilter"
+import "github.com/holiman/bloomfilter"
 
 const (
   maxElements = 100000
@@ -120,3 +121,5 @@ Where possible, branch-free operations are used to avoid deep pipeline / executi
 [MIT license](MIT-LICENSE.txt)
 
 Copyright © 2014-2016 Barry Allard
+Copyright © 2019-2020 Martin Holst Swende
+

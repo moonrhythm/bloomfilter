@@ -12,6 +12,9 @@ package bloomfilter
 
 import (
 	"compress/gzip"
+	_ "encoding/gob" // make sure gob is available
+	"encoding/json"
+	"errors"
 	"io"
 	"os"
 )
@@ -85,4 +88,47 @@ func (f *Filter) WriteFile(filename string) (n int64, err error) {
 	}()
 
 	return f.WriteTo(w)
+}
+
+type jsonType struct {
+	Version string   `json:"version"`
+	Bits    []uint64 `json:"bits"`
+	Keys    []uint64 `json:"keys"`
+	M       uint64   `json:"m"`
+	N       uint64   `json:"n"`
+}
+
+func (f *Filter) MarshalJSON() ([]byte, error) {
+	return json.Marshal(&jsonType{
+		string(version),
+		f.bits,
+		f.keys,
+		f.m,
+		f.n,
+	})
+}
+
+func (f *Filter) UnmarshalJSON(data []byte) error {
+	var j jsonType
+	if err := json.Unmarshal(data, &j); err != nil {
+		return err
+	}
+	if j.Version != string(version) {
+		return errors.New("incompatible version")
+	}
+	f.bits = j.Bits
+	f.keys = j.Keys
+	f.n = j.N
+	f.m = j.M
+	return nil
+}
+
+// GobDecode conforms to interface gob.GobDecoder
+func (f *Filter) GobDecode(data []byte) error {
+	return f.UnmarshalBinary(data)
+}
+
+// GobEncode conforms to interface gob.GobEncoder
+func (f *Filter) GobEncode() ([]byte, error) {
+	return f.MarshalBinary()
 }

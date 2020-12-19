@@ -14,16 +14,27 @@ import (
 	crand "crypto/rand"
 	"encoding/binary"
 	"fmt"
+	"math"
 )
 
 const (
-	// MMin is the minimum Bloom filter bits count
-	MMin = 2
-	// KMin is the minimum number of keys
-	KMin = 1
-	// Uint64Bytes is the number of bytes in type uint64
-	Uint64Bytes = 8
+	MMin        = 2 // MMin is the minimum Bloom filter bits count
+	KMin        = 1 // KMin is the minimum number of keys
+	Uint64Bytes = 8 // Uint64Bytes is the number of bytes in type uint64
 )
+
+// OptimalK calculates the optimal k value for creating a new Bloom filter
+// maxn is the maximum anticipated number of elements
+func OptimalK(m, maxN uint64) uint64 {
+	return uint64(math.Ceil(float64(m) * math.Ln2 / float64(maxN)))
+}
+
+// OptimalM calculates the optimal m value for creating a new Bloom filter
+// p is the desired false positive probability
+// optimal m = ceiling( - n * ln(p) / ln(2)**2 )
+func OptimalM(maxN uint64, p float64) uint64 {
+	return uint64(math.Ceil(-float64(maxN) * math.Log(p) / (math.Ln2 * math.Ln2)))
+}
 
 // New Filter with CSPRNG keys
 //
@@ -52,20 +63,13 @@ func (f *Filter) NewCompatible() (*Filter, error) {
 func NewOptimal(maxN uint64, p float64) (*Filter, error) {
 	m := OptimalM(maxN, p)
 	k := OptimalK(m, maxN)
-	debug("New optimal bloom filter :: requested max elements (n):%d,"+
-		" probability of collision (p):%1.10f -> recommends -> bits (m): %d (%f GiB), "+
-		"number of keys (k): %d",
-		maxN, p, m, float64(m)/(gigabitsPerGiB), k)
 	return New(m, k)
 }
 
-// UniqueKeys is true if all keys are unique
-func UniqueKeys(keys []uint64) bool {
+// uniqueKeys is true if all keys are unique
+func uniqueKeys(keys []uint64) bool {
 	for j := 0; j < len(keys)-1; j++ {
 		for i := j + 1; i < len(keys); i++ {
-			if i == j {
-				continue
-			}
 			if keys[i] == keys[j] {
 				return false
 			}
@@ -76,20 +80,20 @@ func UniqueKeys(keys []uint64) bool {
 
 func (f *Filter) Keys() []uint64 {
 	var cpy []uint64
-	for _, v := range f.keys {
-		cpy = append(cpy, v)
-	}
+	cpy = append(cpy, f.keys...)
 	return cpy
 }
 
 // NewWithKeys creates a new Filter from user-supplied origKeys
 func NewWithKeys(m uint64, origKeys []uint64) (f *Filter, err error) {
-	bits, err := newBits(m)
-	if err != nil {
+	var (
+		bits []uint64
+		keys []uint64
+	)
+	if bits, err = newBits(m); err != nil {
 		return nil, err
 	}
-	keys, err := newKeysCopy(origKeys)
-	if err != nil {
+	if keys, err = newKeysCopy(origKeys); err != nil {
 		return nil, err
 	}
 	return &Filter{
@@ -102,21 +106,21 @@ func NewWithKeys(m uint64, origKeys []uint64) (f *Filter, err error) {
 
 func newBits(m uint64) ([]uint64, error) {
 	if m < MMin {
-		return nil, errM()
+		return nil, fmt.Errorf("number of bits in the filter must be >= %d (was %d)", MMin, m)
 	}
 	return make([]uint64, (m+63)/64), nil
 }
 
 func newKeysBlank(k uint64) ([]uint64, error) {
 	if k < KMin {
-		return nil, errK()
+		return nil, fmt.Errorf("keys must have length %d or greater (was %d)", KMin, k)
 	}
 	return make([]uint64, k), nil
 }
 
 func newKeysCopy(origKeys []uint64) (keys []uint64, err error) {
-	if !UniqueKeys(origKeys) {
-		return nil, errUniqueKeys()
+	if !uniqueKeys(origKeys) {
+		return nil, fmt.Errorf("Bloom filter keys must be unique")
 	}
 	keys, err = newKeysBlank(uint64(len(origKeys)))
 	if err != nil {
@@ -124,16 +128,4 @@ func newKeysCopy(origKeys []uint64) (keys []uint64, err error) {
 	}
 	copy(keys, origKeys)
 	return keys, err
-}
-
-func newWithKeysAndBits(m uint64, keys []uint64, bits []uint64, n uint64) (
-	f *Filter, err error,
-) {
-	f, err = NewWithKeys(m, keys)
-	if err != nil {
-		return nil, err
-	}
-	copy(f.bits, bits)
-	f.n = n
-	return f, nil
 }

@@ -78,12 +78,6 @@ func uniqueKeys(keys []uint64) bool {
 	return true
 }
 
-func (f *Filter) Keys() []uint64 {
-	var cpy []uint64
-	cpy = append(cpy, f.keys...)
-	return cpy
-}
-
 // NewWithKeys creates a new Filter from user-supplied origKeys
 func NewWithKeys(m uint64, origKeys []uint64) (f *Filter, err error) {
 	var (
@@ -111,21 +105,13 @@ func newBits(m uint64) ([]uint64, error) {
 	return make([]uint64, (m+63)/64), nil
 }
 
-func newKeysBlank(k uint64) ([]uint64, error) {
-	if k < KMin {
-		return nil, fmt.Errorf("keys must have length %d or greater (was %d)", KMin, k)
-	}
-	return make([]uint64, k), nil
-}
-
 func newKeysCopy(origKeys []uint64) (keys []uint64, err error) {
+	if len(origKeys) < KMin {
+		return nil, fmt.Errorf("keys must have length %d or greater (was %d)", KMin, len(origKeys))
+	}
 	if !uniqueKeys(origKeys) {
 		return nil, fmt.Errorf("Bloom filter keys must be unique")
 	}
-	keys, err = newKeysBlank(uint64(len(origKeys)))
-	if err != nil {
-		return keys, err
-	}
-	copy(keys, origKeys)
+	keys = append(keys, origKeys...)
 	return keys, err
 }

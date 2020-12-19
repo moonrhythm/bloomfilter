@@ -94,6 +94,87 @@ func Test0(t *testing.T) {
 	}
 }
 
+func TestUnion(t *testing.T) {
+	f1, _ := New(8*500, 4)
+	tmp, _ := New(8*500, 4)
+	if _, err := tmp.Union(f1); err == nil {
+		t.Errorf("Incompatible, should error")
+	}
+	f2, err := f1.NewCompatible()
+	if err != nil {
+		t.Fatal(err)
+	}
+	rand.Seed(1337)
+	// Add some content
+	var tests = make([]hashableUint64, 200)
+	for i := 0; i < len(tests); i++ {
+		tests[i] = hashableUint64(rand.Uint64())
+		if i&1 == 0 {
+			f1.Add(tests[i])
+		} else {
+			f2.Add(tests[i])
+		}
+	}
+	unionF, err := f2.Union(f1)
+	if err != nil {
+		t.Fatal(err)
+	}
+	copyF, err := unionF.Copy()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	for i, v := range tests {
+		if !unionF.Contains(v) {
+			t.Errorf("missing item %d", i)
+		}
+		if !copyF.Contains(v) {
+			t.Errorf("missing item %d", i)
+		}
+		if i&1 == 0 {
+			if !f1.Contains(v) {
+				t.Errorf("missing item %d", i)
+			}
+			if f2.Contains(v) {
+				t.Errorf("f2 has item it shouldn't have")
+			}
+		} else {
+			if !f2.Contains(v) {
+				t.Errorf("missing item %d", i)
+			}
+			if f1.Contains(v) {
+				t.Errorf("f1 has item it shouldn't have")
+			}
+		}
+	}
+	// And test merging f1 into f2
+	f2.UnionInPlace(f1)
+	for i, v := range tests {
+		if !f2.Contains(v) {
+			t.Errorf("missing item %d", i)
+		}
+		if i&1 == 0 {
+			if !f1.Contains(v) {
+				t.Errorf("missing item %d", i)
+			}
+		} else {
+			if f1.Contains(v) {
+				t.Errorf("f1 has item it shouldn't have")
+			}
+		}
+	}
+}
+
+func TestFPRate(t *testing.T) {
+	f, _ := New(8*32, 4)
+	f.n = 101 // "insert" 101 items
+	// yes we could add some more tests here...
+	have, want := f.FalsePosititveProbability(), 0.402507
+	if int(1000*have) != int(1000*want) {
+		t.Errorf("have %08f, want %f", have, want)
+	}
+}
+
 func BenchmarkAddX10kX5(b *testing.B) {
 	bf, _ := New(10000, 5)
 	b.Run("add-10kx5", func(b *testing.B) {

@@ -27,24 +27,17 @@ func unmarshalBinaryHeader(r io.Reader) (k, n, m uint64, err error) {
 	if !bytes.Equal(magic, headerMagic) {
 		return 0, 0, 0, fmt.Errorf("incompatible version (wrong magic), got %x", magic)
 	}
-	err = binary.Read(r, binary.LittleEndian, &k)
+	var knm = make([]uint64, 3)
+	err = binary.Read(r, binary.LittleEndian, knm)
 	if err != nil {
 		return 0, 0, 0, err
 	}
+	k = knm[0]
+	n = knm[1]
+	m = knm[2]
 	if k < KMin {
 		return 0, 0, 0, fmt.Errorf("keys must have length %d or greater (was %d)", KMin, k)
 	}
-
-	err = binary.Read(r, binary.LittleEndian, &n)
-	if err != nil {
-		return 0, 0, 0, err
-	}
-
-	err = binary.Read(r, binary.LittleEndian, &m)
-	if err != nil {
-		return 0, 0, 0, err
-	}
-
 	if m < MMin {
 		return 0, 0, 0, fmt.Errorf("number of bits in the filter must be >= %d (was %d)", MMin, m)
 	}
@@ -58,13 +51,14 @@ func unmarshalBinaryBits(r io.Reader, m uint64) (bits []uint64, err error) {
 		return bits, err
 	}
 	bs := make([]byte, 8)
-	for i := 0; i < len(bits); i++ {
-		if _, err = r.Read(bs); err != nil {
-			return bits, err
-		}
+	for i := 0; i < len(bits) && err == nil; i++ {
+		_, err = r.Read(bs)
 		bits[i] = binary.LittleEndian.Uint64(bs)
 	}
-	return bits, err
+	if err != nil {
+		return nil, err
+	}
+	return bits, nil
 }
 
 func unmarshalBinaryKeys(r io.Reader, k uint64) (keys []uint64, err error) {

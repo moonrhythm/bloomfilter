@@ -1,5 +1,6 @@
 
 [![GoDoc](https://godoc.org/github.com/holiman/bloomfilter?status.png)](https://godoc.org/github.com/holiman/bloomfilter)
+[![CircleCI](https://circleci.com/gh/holiman/bloomfilter.svg?style=svg)](https://app.circleci.com/pipelines/github/holiman/bloomfilter)
 
 # History
 

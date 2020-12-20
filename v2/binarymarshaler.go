@@ -74,16 +74,16 @@ func (f *Filter) MarshallToWriter(out io.Writer) (int, [sha512.Size384]byte, err
 	if chunkSize < 512 {
 		chunkSize = 512 // Min 4K bytes (512 uint64s)
 	}
-	bs := make([]byte, chunkSize*8)
+	buf := make([]byte, chunkSize*8)
 	for start := 0; start < len(f.bits); {
 		end := start + chunkSize
 		if end > len(f.bits) {
 			end = len(f.bits)
 		}
 		for i, x := range f.bits[start:end] {
-			binary.LittleEndian.PutUint64(bs[8*i:], x)
+			binary.LittleEndian.PutUint64(buf[8*i:], x)
 		}
-		if _, err := mw.Write(bs[0 : (end-start)*8]); err != nil {
+		if _, err := mw.Write(buf[0 : (end-start)*8]); err != nil {
 			return c.bytes, hash, err
 		}
 		start = end

@@ -21,7 +21,7 @@ import (
 
 func unmarshalBinaryHeader(r io.Reader) (k, n, m uint64, err error) {
 	magic := make([]byte, len(headerMagic))
-	if _, err := r.Read(magic); err != nil {
+	if _, err := io.ReadFull(r, magic); err != nil {
 		return 0, 0, 0, err
 	}
 	if !bytes.Equal(magic, headerMagic) {
@@ -41,7 +41,6 @@ func unmarshalBinaryHeader(r io.Reader) (k, n, m uint64, err error) {
 	if m < MMin {
 		return 0, 0, 0, fmt.Errorf("number of bits in the filter must be >= %d (was %d)", MMin, m)
 	}
-
 	return k, n, m, err
 }
 
@@ -52,7 +51,7 @@ func unmarshalBinaryBits(r io.Reader, m uint64) (bits []uint64, err error) {
 	}
 	bs := make([]byte, 8)
 	for i := 0; i < len(bits) && err == nil; i++ {
-		_, err = r.Read(bs)
+		_, err = io.ReadFull(r, bs)
 		bits[i] = binary.LittleEndian.Uint64(bs)
 	}
 	if err != nil {
@@ -81,7 +80,7 @@ func (h *hashingReader) Read(p []byte) (n int, err error) {
 	if err != nil {
 		return n, err
 	}
-	_, _ = h.hasher.Write(p)
+	_, _ = h.hasher.Write(p[:n])
 	return n, err
 }
 

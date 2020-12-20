@@ -30,7 +30,7 @@ func (d devnull) Write(p []byte) (n int, err error) {
 
 func TestWriteRead(t *testing.T) {
 	// minimal filter
-	f, _ := New(8*32, 5)
+	f, _ := New(8*1024*100, 5)
 	// Add some content
 	var tests = make([]hashableUint64, 20)
 	for i := 0; i < 20; i++ {
@@ -89,7 +89,7 @@ func TestWriteRead(t *testing.T) {
 		verify(t, &f2)
 	})
 	t.Run("file", func(t *testing.T) {
-		fName := filepath.Join(os.TempDir(), "temp.deleteme")
+		fName := filepath.Join(os.TempDir(), "temp.deleteme.gz")
 		if _, err := f.WriteFile(fName); err != nil {
 			t.Fatal(err)
 		}
@@ -100,7 +100,6 @@ func TestWriteRead(t *testing.T) {
 			verify(t, f2)
 		}
 	})
-
 }
 
 func TestCorruption(t *testing.T) {

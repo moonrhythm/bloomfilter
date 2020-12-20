@@ -14,7 +14,7 @@ jobs:
 
       # specify any bash command here prefixed with `run: `
       - run: go get -v -t -d ./...
-      - run: go test -v ./... -coverprofile=coverage.txt -covermode=count
+      - run: (cd v2 && go test -v ./... -coverprofile=coverage.txt -covermode=count )
       - run:
           name: "Codecov upload"
           command: bash <(curl -s https://codecov.io/bash)
@@ -23,5 +23,5 @@ jobs:
           command: curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin v1.23.8
       - run:
           name: "Lint"
-          command: golangci-lint run
+          command: (cd v2 && golangci-lint run)
 

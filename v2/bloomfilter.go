@@ -10,7 +10,7 @@
 //
 // Copyright © 2020 Martin Holst Swende, continued on the work of Barry Allard
 
-package bloomfilter
+package v2
 
 import (
 	"errors"

@@ -8,7 +8,7 @@
 //
 // MIT license
 //
-package bloomfilter
+package v2
 
 // returns 0 if equal, does not compare len(b0) with len(b1)
 func noBranchCompareUint64s(b0, b1 []uint64) uint64 {

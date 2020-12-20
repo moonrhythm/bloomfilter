@@ -8,7 +8,7 @@
 //
 // MIT license
 //
-package bloomfilter
+package v2
 
 import (
 	"fmt"

@@ -8,7 +8,7 @@
 // Copyright © 2018, 2020 Martin Holst Swende
 // MIT license
 //
-package bloomfilter
+package v2
 
 import (
 	"bytes"

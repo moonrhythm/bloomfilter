@@ -1,4 +1,4 @@
-package bloomfilter
+package v2
 
 import (
 	"testing"

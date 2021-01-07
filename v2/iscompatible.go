@@ -2,12 +2,17 @@
 // marshalable, unionable, probability- and
 // optimal-size-calculating Bloom filter in go
 //
+// https://github.com/holiman/bloomfilter
+//
+// Original source:
 // https://github.com/steakknife/bloomfilter
 //
 // Copyright © 2014, 2015, 2018 Barry Allard
+// Copyright © 2020 Martin Holst Swende
 //
 // MIT license
 //
+
 package v2
 
 // returns 0 if equal, does not compare len(b0) with len(b1)

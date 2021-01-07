@@ -2,13 +2,16 @@
 // marshalable, unionable, probability- and
 // optimal-size-calculating Bloom filter in go
 //
+// https://github.com/holiman/bloomfilter
+//
+// Original source:
 // https://github.com/steakknife/bloomfilter
 //
 // Copyright © 2014, 2015, 2018 Barry Allard
+// Copyright © 2020 Martin Holst Swende
 //
 // MIT license
 //
-// Copyright © 2020 Martin Holst Swende, continued on the work of Barry Allard
 
 package v2
 

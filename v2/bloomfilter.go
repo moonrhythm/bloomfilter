@@ -49,17 +49,22 @@ func (f *Filter) Add(v hash.Hash64) {
 	f.AddHash(v.Sum64())
 }
 
+func (f *Filter) AddBatch(vs []hash.Hash64) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	for _, v := range vs {
+		f.addHashLocked(v.Sum64())
+	}
+}
+
 // rotation sets how much to rotate the hash on each filter iteration. This
 // is somewhat randomly set to a prime on the lower segment of 64. At 17, the cycle
 // does not repeat for quite a while, but even for low number of filters the
 // changes are quite rapid
 const rotation = 17
 
-// Adds an already hashes item to the filter.
-// Identical to Add (but slightly faster)
-func (f *Filter) AddHash(hash uint64) {
-	f.lock.Lock()
-	defer f.lock.Unlock()
+func (f *Filter) addHashLocked(hash uint64) {
 	var (
 		i uint64
 	)
@@ -69,6 +74,24 @@ func (f *Filter) AddHash(hash uint64) {
 		f.bits[i>>6] |= 1 << uint(i&0x3f)
 	}
 	f.n++
+}
+
+// Adds an already hashes item to the filter.
+// Identical to Add (but slightly faster)
+func (f *Filter) AddHash(hash uint64) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	f.addHashLocked(hash)
+}
+
+func (f *Filter) AddHashBatch(hashes []uint64) {
+	f.lock.Lock()
+	defer f.lock.Unlock()
+
+	for _, hash := range hashes {
+		f.addHashLocked(hash)
+	}
 }
 
 // ContainsHash tests if f contains the (already hashed) key
